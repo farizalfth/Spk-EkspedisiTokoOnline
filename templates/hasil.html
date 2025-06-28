@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}Hasil Perhitungan SAW{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Hasil Perhitungan Metode SAW</h1>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% else %}
+
+<div class="alert alert-success" role="alert">
+  <h4 class="alert-heading">Rekomendasi Terbaik!</h4>
+  <p>Berdasarkan perhitungan, alternatif terbaik adalah <strong>{{ alternatif_terbaik.nama }}</strong> dengan skor akhir <strong>{{ "{:.6f}".format(alternatif_terbaik.skor) }}</strong>.</p>
+</div>
+
+<h3 class="mt-4">Grafik Perbandingan Skor Akhir</h3>
+<div class="card">
+    <div class="card-body">
+        <canvas id="hasilChart" style="min-height: 300px;"></canvas>
+    </div>
+</div>
+
+<h3 class="mt-4">Langkah 3: Hasil Akhir dan Perangkingan (V)</h3>
+<p>Skor akhir setiap alternatif setelah dikalikan dengan bobot.</p>
+<div class="table-responsive">
+    {{ table_hasil|safe }}
+</div>
+
+<h3 class="mt-4">Langkah 2: Matriks Ternormalisasi (R)</h3>
+<p>Hasil normalisasi matriks berdasarkan tipe kriteria (cost/benefit).</p>
+<div class="table-responsive">
+    {{ table_normalisasi|safe }}
+</div>
+
+<h3 class="mt-4">Langkah 1: Matriks Keputusan (X)</h3>
+<p>Data awal yang digunakan untuk perhitungan.</p>
+<div class="table-responsive">
+    {{ table_awal|safe }}
+</div>
+
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('hasilChart');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{
+                label: 'Skor Akhir',
+                data: {{ chart_scores|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+{% endblock %}

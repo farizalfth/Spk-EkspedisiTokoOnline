@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %}Data Kriteria{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Data Kriteria dan Bobot</h1>
+</div>
+
+<form action="{{ url_for('update_kriteria') }}" method="post">
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nama Kriteria</th>
+                    <th>Bobot (Total harus 1)</th>
+                    <th>Tipe</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k in kriteria %}
+                <tr>
+                    <td>{{ k.nama_kriteria }}</td>
+                    <td>
+                        <input type="number" name="bobot_{{ k.id_kriteria }}" value="{{ k.bobot }}" step="0.01" class="form-control">
+                    </td>
+                    <td>
+                        <select name="tipe_{{ k.id_kriteria }}" class="form-select">
+                            <option value="cost" {% if k.tipe == 'cost' %}selected{% endif %}>Cost</option>
+                            <option value="benefit" {% if k.tipe == 'benefit' %}selected{% endif %}>Benefit</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+</form>
+{% endblock %}

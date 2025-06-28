@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block title %}Data Customer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Manajemen Data Customer</h1>
+    {% if session.role == 'admin' %}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="bi bi-plus-circle"></i> Tambah Customer
+    </button>
+    {% endif %}
+</div>
+
+<div class="table-responsive">
+    <table id="dataTabel" class="table table-striped table-bordered" style="width:100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nama Customer</th>
+                <th>Alamat</th>
+                <th>Email</th>
+                {% if session.role == 'admin' %}
+                <th class="text-center">Aksi</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for cust in customers %}
+            <tr>
+                <td>{{ cust.id_customer }}</td>
+                <td>{{ cust.nama }}</td>
+                <td>{{ cust.alamat }}</td>
+                <td>{{ cust.email }}</td>
+                {% if session.role == 'admin' %}
+                <td class="text-center">
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ cust.id_customer }}"><i class="bi bi-pencil"></i></button>
+                    <form action="{{ url_for('delete_customer', id=cust.id_customer) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus customer ini?')"><i class="bi bi-trash"></i></button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if session.role == 'admin' %}
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form action="{{ url_for('add_customer') }}" method="post"><div class="modal-header"><h5 class="modal-title">Tambah Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Nama</label><input type="text" name="nama" class="form-control" required></div><div class="mb-3"><label class="form-label">Alamat</label><input type="text" name="alamat" class="form-control"></div><div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div></form></div></div></div>
+
+<!-- Edit Modals -->
+{% for cust in customers %}
+<div class="modal fade" id="editModal{{ cust.id_customer }}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form action="{{ url_for('edit_customer', id=cust.id_customer) }}" method="post"><div class="modal-header"><h5 class="modal-title">Edit Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Nama</label><input type="text" name="nama" class="form-control" value="{{ cust.nama }}" required></div><div class="mb-3"><label class="form-label">Alamat</label><input type="text" name="alamat" class="form-control" value="{{ cust.alamat }}"></div><div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ cust.email }}"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Perubahan</button></div></form></div></div></div>
+{% endfor %}
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>$(document).ready(function() { $('#dataTabel').DataTable(); });</script>
+{% endblock %}

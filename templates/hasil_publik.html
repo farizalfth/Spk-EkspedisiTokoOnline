@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}Peringkat Ekspedisi{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-5 fw-bold">Peringkat Jasa Ekspedisi</h1>
+    <p class="lead text-muted">Berikut adalah peringkat jasa ekspedisi berdasarkan analisis metode SAW.</p>
+</div>
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+        {% if hasil is not none %}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="text-center">Peringkat</th>
+                                <th scope="col">Nama Ekspedisi</th>
+                                <th scope="col" class="text-end">Skor Akhir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for index, row in hasil.iterrows() %}
+                            <tr>
+                                <td class="text-center">
+                                    {% if row.rangking == 1 %}
+                                    <span class="badge bg-success fs-5"><i class="bi bi-trophy-fill me-1"></i> {{ row.rangking }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary fs-5">{{ row.rangking }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold fs-5">{{ row['nama'] }}</td>
+                                <td class="text-end fs-5">{{ "%.6f"|format(row['skor']) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

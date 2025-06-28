@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}SPK Ekspedisi{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        :root { --primary-color: #008080; --light-primary: #e6f2f2; --background-color: #f7fdfd; --text-color: #343a40; --heading-color: #2c3e50; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .navbar { background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 0.8rem 1rem; }
+        .navbar-brand { font-weight: 700; color: var(--primary-color) !important; }
+        .nav-link.active, .dropdown-item.active { color: var(--primary-color) !important; font-weight: 500; }
+        .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); border-radius: 8px; }
+        .btn-primary:hover { background-color: #006666; border-color: #006666; }
+        .logged-in-body { background-color: #f8f9fa; }
+
+        /* ================================================= */
+        /* CSS BARU UNTUK NOTIFIKASI TOAST (POSISI & UKURAN) */
+        /* ================================================= */
+        #flash-container {
+            position: fixed;            /* Membuatnya 'melayang' di atas halaman */
+            top: 80px;                  /* Jarak dari atas, tepat di bawah navbar */
+            left: 50%;                  /* Posisikan di tengah secara horizontal */
+            transform: translateX(-50%);/* Trik untuk memastikan benar-benar di tengah */
+            width: auto;                /* Lebar menyesuaikan konten */
+            max-width: 500px;           /* Lebar maksimum notifikasi */
+            min-width: 350px;           /* Lebar minimum agar tidak terlalu kecil */
+            z-index: 1056;              /* Pastikan muncul di atas semua elemen lain */
+        }
+        #flash-container .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: none;
+            text-align: center; /* Teks notifikasi menjadi di tengah */
+        }
+        #flash-container .alert .btn-close {
+            padding: 0.75rem 1.25rem;
+        }
+    </style>
+</head>
+<body class="{% if session.user_id %}logged-in-body{% endif %}">
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <!-- (Isi navbar tidak berubah) -->
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') if not session.user_id else url_for('dashboard') }}"><i class="bi bi-truck-front-fill me-2"></i>SPK Ekspedisi</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                {% if session.user_id %}
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link {% if 'dashboard' in request.path %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="nav-item dropdown"><a class="nav-link dropdown-toggle {% if 'alternatif' in request.path or 'kriteria' in request.path or 'customer' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">Manajemen Data</a><ul class="dropdown-menu"><li><a class="dropdown-item {% if 'alternatif' in request.path %}active{% endif %}" href="{{ url_for('alternatif') }}">Data Alternatif</a></li><li><a class="dropdown-item {% if 'kriteria' in request.path %}active{% endif %}" href="{{ url_for('kriteria') }}">Data Kriteria</a></li><li><a class="dropdown-item {% if 'customer' in request.path %}active{% endif %}" href="{{ url_for('customer') }}">Data Customer</a></li></ul></li>
+                        <li class="nav-item"><a class="nav-link {% if 'penilaian' in request.path %}active{% endif %}" href="{{ url_for('penilaian') }}">Penilaian</a></li>
+                        <li class="nav-item"><a class="nav-link {% if 'hasil' in request.path %}active{% endif %}" href="{{ url_for('hasil_perhitungan') }}">Analisis Detail</a></li>
+                    </ul>
+                    <div class="d-flex align-items-center"><span class="navbar-text me-3">Halo, {{ session.username }} ({{ session.role }})</span><a href="{{ url_for('logout') }}" class="btn btn-outline-secondary btn-sm">Logout</a></div>
+                {% else %}
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0"><li class="nav-item"><a class="nav-link {% if request.path == url_for('index') %}active{% endif %}" href="{{ url_for('index') }}">Home</a></li><li class="nav-item"><a class="nav-link {% if request.path == url_for('hasil_publik') %}active{% endif %}" href="{{ url_for('hasil_publik') }}">Peringkat Ekspedisi</a></li><li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li></ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- ======================================= -->
+    <!-- PERUBAHAN STRUKTUR HTML UNTUK NOTIFIKASI -->
+    <!-- ======================================= -->
+    <!-- Container notifikasi sekarang berada di luar <main> -->
+    <div id="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    </div>
+
+    <main class="container py-4">
+        <!-- Notifikasi sudah dipindahkan dari sini -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container text-center py-4 mt-4 border-top">
+        <p class="text-muted">© 2024 SPK Ekspedisi</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        window.addEventListener('load', function() {
+            const alerts = document.querySelectorAll('.alert.alert-dismissible');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 1000);  // Notifikasi akan hilang dalam 1 detik
+            });
+        });
+    </script>
+</body>
+</html>

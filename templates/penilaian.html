@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}Penilaian{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Penilaian Kualitas Ekspedisi</h1>
+</div>
+
+{% if session.role == 'admin' %}
+<div class="card mb-5">
+    <div class="card-header">Form Tambah Penilaian</div>
+    <div class="card-body">
+        <form action="{{ url_for('add_penilaian') }}" method="post">
+            <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">Pilih Alternatif</label><select name="id_ekspedisi" class="form-select" required><option value="">-- Pilih Ekspedisi --</option>{% for e in ekspedisi %}<option value="{{ e.id_ekspedisi }}">{{ e.nama }}</option>{% endfor %}</select></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Pilih Customer</label><select name="id_customer" class="form-select" required><option value="">-- Pilih Customer --</option>{% for c in customers %}<option value="{{ c.id_customer }}">{{ c.nama }}</option>{% endfor %}</select></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Nilai Kualitas Pelayanan (1-5)</label><input type="number" name="kualitas" step="0.1" min="1" max="5" class="form-control" required></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Nilai Komunikasi (1-5)</label><input type="number" name="komunikasi" step="0.1" min="1" max="5" class="form-control" required></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Simpan Penilaian</button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Anda dapat melihat riwayat penilaian. Hanya Admin yang dapat menambahkan data baru.</div>
+{% endif %}
+
+<h3 class="mt-4">Riwayat Penilaian</h3>
+<div class="table-responsive">
+    <table id="dataTabel" class="table table-striped table-bordered" style="width:100%">
+        <thead>
+            <tr>
+                <th>Ekspedisi</th>
+                <th>Customer</th>
+                <th>Kualitas</th>
+                <th>Komunikasi</th>
+                <th>Tanggal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in penilaian %}
+            <tr>
+                <td>{{ p.nama_ekspedisi }}</td>
+                <td>{{ p.nama_customer }}</td>
+                <td>{{ p.kualitas }}</td>
+                <td>{{ p.komunikasi }}</td>
+                <td>{{ p.tanggal.strftime('%d-%m-%Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>$(document).ready(function() { $('#dataTabel').DataTable({"order": [[ 4, "desc" ]]}); });</script>
+{% endblock %}

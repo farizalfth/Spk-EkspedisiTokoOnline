@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block title %}Selamat Datang di SPK Ekspedisi{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center g-5 py-5">
+    <div class="col-lg-7 text-center text-lg-start">
+        <h1 class="display-4 fw-bold lh-1 mb-3" style="color: var(--heading-color);">Temukan Jasa Ekspedisi Terbaik Untuk Anda</h1>
+        
+        <!-- Deskripsi Website -->
+        <p class="col-lg-10 fs-5">
+            Aplikasi ini membantu Anda mengambil keputusan objektif dalam memilih jasa pengiriman terbaik. Dengan metode <strong>SAW (Simple Additive Weighting)</strong>, kami mengubah data kompleks menjadi skor yang mudah dipahami, memastikan Anda memilih mitra logistik yang paling efisien.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center justify-content-lg-start mt-4">
+            <a href="{{ url_for('hasil_publik') }}" class="btn btn-primary btn-lg px-4 me-sm-3">Lihat Peringkat Ekspedisi</a>
+        </div>
+    </div>
+    <div class="col-10 col-sm-8 col-lg-5">
+        <img src="https://images.pexels.com/photos/4482900/pexels-photo-4482900.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" class="d-block mx-lg-auto img-fluid rounded-3 shadow-lg" alt="Logistics Illustration" loading="lazy">
+    </div>
+</div>
+
+<!-- Fitur Unggulan -->
+<div class="container px-4 py-5" id="featured-3">
+    <h2 class="pb-2 border-bottom text-center">Mengapa Menggunakan Sistem Ini?</h2>
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="feature col text-center">
+            <div class="feature-icon d-inline-flex align-items-center justify-content-center fs-2 mb-3" style="background-color: var(--light-primary); color: var(--primary-color); width: 4rem; height: 4rem; border-radius: 50%;">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <h3 class="fs-4">Berbasis Data</h3>
+            <p>Keputusan objektif berdasarkan data biaya, kecepatan, cakupan, dan kualitas pelayanan.</p>
+        </div>
+        <div class="feature col text-center">
+            <div class="feature-icon d-inline-flex align-items-center justify-content-center fs-2 mb-3" style="background-color: var(--light-primary); color: var(--primary-color); width: 4rem; height: 4rem; border-radius: 50%;">
+                <i class="bi bi-sliders"></i>
+            </div>
+            <h3 class="fs-4">Dapat Disesuaikan</h3>
+            <p>Admin dapat mengatur bobot setiap kriteria sesuai prioritas bisnis yang dinamis.</p>
+        </div>
+        <div class="feature col text-center">
+            <div class="feature-icon d-inline-flex align-items-center justify-content-center fs-2 mb-3" style="background-color: var(--light-primary); color: var(--primary-color); width: 4rem; height: 4rem; border-radius: 50%;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h3 class="fs-4">Transparan & Cepat</h3>
+            <p>Metode SAW memberikan perhitungan yang transparan dan hasil yang cepat untuk efisiensi waktu.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

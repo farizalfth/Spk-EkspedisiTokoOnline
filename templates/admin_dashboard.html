@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Admin Dashboard</h1>
+</div>
+<div class="row mt-4">
+    <div class="col-lg col-md-6 mb-4"><div class="card text-white bg-primary h-100"><div class="card-body"><h5 class="card-title">Total Alternatif</h5><p class="card-text fs-1 fw-bold">{{ total_alternatif }}</p></div></div></div>
+    <div class="col-lg col-md-6 mb-4"><div class="card text-white bg-secondary h-100"><div class="card-body"><h5 class="card-title">Total Kriteria</h5><p class="card-text fs-1 fw-bold">{{ total_kriteria }}</p></div></div></div>
+    <div class="col-lg col-md-6 mb-4"><div class="card text-white bg-success h-100"><div class="card-body"><h5 class="card-title">Kriteria Benefit</h5><p class="card-text fs-1 fw-bold">{{ total_benefit }}</p></div></div></div>
+    <div class="col-lg col-md-6 mb-4"><div class="card text-white bg-danger h-100"><div class="card-body"><h5 class="card-title">Kriteria Cost</h5><p class="card-text fs-1 fw-bold">{{ total_cost }}</p></div></div></div>
+    <div class="col-lg col-md-6 mb-4"><div class="card text-white bg-info h-100"><div class="card-body"><h5 class="card-title">Total Penilaian</h5><p class="card-text fs-1 fw-bold">{{ total_penilaian }}</p></div></div></div>
+</div>
+{% endblock %}

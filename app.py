@@ -146,13 +146,51 @@ def alternatif():
     cursor.close(); conn.close()
     return render_template('alternatif.html', alternatif=data)
 
+# Di dalam app.py
+
 @app.route('/kriteria')
-@login_required
+@login_required # Semua user yang login bisa lihat halaman ini
 def kriteria():
-    conn = get_db_connection(); cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM kriteria"); data = cursor.fetchall()
-    cursor.close(); conn.close()
+    conn = get_db_connection()
+    if not conn:
+        return redirect(url_for('dashboard'))
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM kriteria")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
     return render_template('kriteria.html', kriteria=data)
+
+@app.route('/kriteria/update', methods=['POST'])
+@admin_action_required # Hanya admin yang bisa mengirim data (POST)
+def update_kriteria():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        total_bobot = 0
+        ids = [key.split('_')[1] for key in request.form if key.startswith('bobot_')]
+        for id_kriteria in ids:
+            total_bobot += float(request.form[f'bobot_{id_kriteria}'])
+        
+        # Validasi sederhana, total bobot harus 1
+        if abs(total_bobot - 1.0) > 0.001:
+            flash(f'Gagal! Total bobot harus tepat 1, bukan {total_bobot}.', 'danger')
+            return redirect(url_for('kriteria'))
+
+        for id_kriteria in ids:
+            bobot = request.form[f'bobot_{id_kriteria}']
+            tipe = request.form[f'tipe_{id_kriteria}']
+            cursor.execute("UPDATE kriteria SET bobot = %s, tipe = %s WHERE id_kriteria = %s", (bobot, tipe, id_kriteria))
+        
+        conn.commit()
+        flash('Bobot dan tipe kriteria berhasil diperbarui.', 'success')
+    except Exception as e:
+        flash(f"Terjadi error: {e}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+        
+    return redirect(url_for('kriteria'))
 
 @app.route('/customer')
 @login_required
@@ -173,16 +211,105 @@ def penilaian():
     cursor.close(); conn.close()
     return render_template('penilaian.html', penilaian=data_penilaian, ekspedisi=ekspedisi, customers=customers)
 
+# Di dalam app.py
+
 @app.route('/hasil')
 @login_required
 def hasil_perhitungan():
-    hasil = get_saw_results()
-    if hasil is None or hasil.empty:
-        flash("Tidak ada data untuk dihitung. Silakan tambahkan alternatif dan penilaian.", "warning")
-        return render_template('hasil.html', error="Data tidak cukup.")
-    chart_labels = hasil['nama'].tolist()
-    chart_scores = hasil['skor'].tolist()
-    return render_template('hasil.html', table_hasil=hasil.to_html(classes='table table-bordered table-striped', index=False, float_format='{:.6f}'.format), alternatif_terbaik=hasil.iloc[0], chart_labels=chart_labels, chart_scores=chart_scores)
+    conn = get_db_connection()
+    if not conn:
+        return render_template('hasil.html', error="Tidak bisa terhubung ke database.")
+        
+    try:
+        df_kriteria = pd.read_sql("SELECT * FROM kriteria", conn)
+        bobot = df_kriteria.set_index('nama_kriteria')['bobot'].to_dict()
+        tipe = df_kriteria.set_index('nama_kriteria')['tipe'].to_dict()
+        df_alternatif = pd.read_sql("SELECT * FROM ekspedisi", conn, index_col='id_ekspedisi')
+        if df_alternatif.empty:
+            flash("Tidak ada data alternatif untuk dihitung.", "warning")
+            return render_template('hasil.html', error="Data alternatif kosong.")
+
+        df_penilaian = pd.read_sql("SELECT id_ekspedisi, AVG(kualitas) as kualitas, AVG(komunikasi) as komunikasi FROM penilaian GROUP BY id_ekspedisi", conn, index_col='id_ekspedisi')
+        df = df_alternatif.join(df_penilaian).fillna(0)
+        df = df.rename(columns={'biaya': 'Biaya', 'kecepatan': 'Kecepatan', 'cakupan_wilayah': 'Cakupan Wilayah', 'kualitas': 'Kualitas Pelayanan', 'komunikasi': 'Komunikasi'})
+        
+        matriks_awal = df[['nama'] + list(bobot.keys())]
+        matriks_r = matriks_awal.copy()
+        for kriteria, jenis in tipe.items():
+            if kriteria not in matriks_r.columns or matriks_r[kriteria].sum() == 0: continue
+            if jenis.lower() == 'cost':
+                min_val = matriks_r[kriteria][matriks_r[kriteria] > 0].min()
+                if pd.isna(min_val): continue
+                matriks_r[kriteria] = matriks_r[kriteria].apply(lambda x: min_val / x if x > 0 else 0)
+            else:
+                max_val = matriks_r[kriteria].max()
+                if max_val == 0: continue
+                matriks_r[kriteria] = matriks_r[kriteria] / max_val
+        
+        skor_akhir = pd.DataFrame(index=df.index)
+        skor_akhir['nama'] = df['nama']
+        skor_akhir['skor'] = sum(matriks_r[k].fillna(0) * w for k, w in bobot.items() if k in matriks_r.columns)
+        skor_akhir = skor_akhir.sort_values(by='skor', ascending=False).reset_index(drop=True)
+        skor_akhir['rangking'] = skor_akhir.index + 1
+        
+        # ======================================================
+        # KODE BARU VERSI 2.0: MEMBUAT PENJELASAN SUPER DETAIL
+        # ======================================================
+        penjelasan_perhitungan = []
+        matriks_r_sorted = matriks_r.set_index('nama').loc[skor_akhir['nama']].reset_index()
+
+        for index, row in skor_akhir.iterrows():
+            nama_alternatif = row['nama']
+            formula_symbolic_parts = []
+            formula_numeric_parts = []
+            
+            norm_values = matriks_r_sorted.loc[matriks_r_sorted['nama'] == nama_alternatif].iloc[0]
+            
+            for kriteria, w in bobot.items():
+                kriteria_var_name = kriteria.replace(" ", "") # Hapus spasi untuk nama variabel
+                r_val = norm_values.get(kriteria, 0)
+                
+                # Buat bagian formula simbolik: (R_Biaya x W_Biaya)
+                symbolic_part = f"(R<sub>{kriteria_var_name}</sub> × W<sub>{kriteria_var_name}</sub>)"
+                formula_symbolic_parts.append(symbolic_part)
+
+                # Buat bagian formula numerik: (0.9286 * 0.10)
+                numeric_part = f"({r_val:.4f} * {w:.2f})"
+                formula_numeric_parts.append(numeric_part)
+            
+            # Gabungkan semua bagian menjadi satu string formula lengkap
+            formula_symbolic_str = "V = " + " + ".join(formula_symbolic_parts)
+            formula_numeric_str = "V = " + " + ".join(formula_numeric_parts)
+            
+            penjelasan_perhitungan.append({
+                'nama': nama_alternatif,
+                'skor': row['skor'],
+                'rangking': row['rangking'],
+                'formula_symbolic': formula_symbolic_str,
+                'formula_numeric': formula_numeric_str
+            })
+        # ======================================================
+        # AKHIR KODE BARU
+        # ======================================================
+
+        chart_labels = skor_akhir['nama'].tolist()
+        chart_scores = skor_akhir['skor'].tolist()
+
+    except Exception as e:
+        flash(f'Terjadi error saat melakukan perhitungan: {e}', 'danger')
+        return render_template('hasil.html', error=str(e))
+    finally:
+        if conn and conn.is_connected(): conn.close()
+
+    return render_template('hasil.html', 
+                           table_awal=matriks_awal.to_html(classes='table table-bordered table-striped', index=False, float_format='{:,.2f}'.format),
+                           table_normalisasi=matriks_r_sorted.to_html(classes='table table-bordered table-striped', index=False, float_format='{:.4f}'.format),
+                           table_hasil=skor_akhir[['rangking', 'nama', 'skor']].to_html(classes='table table-bordered table-striped', index=False, float_format='{:.6f}'.format),
+                           alternatif_terbaik=skor_akhir.iloc[0],
+                           chart_labels=chart_labels,
+                           chart_scores=chart_scores,
+                           penjelasan_perhitungan=penjelasan_perhitungan,
+                           error=None)
 
 # --- RUTE AKSI (CRUD) - HANYA UNTUK ADMIN ---
 @app.route('/alternatif/add', methods=['POST'])

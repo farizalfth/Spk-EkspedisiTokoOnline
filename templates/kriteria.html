@@ -3,16 +3,58 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Data Kriteria dan Bobot</h1>
+    <h1 class="h2">Manajemen Data Kriteria</h1>
 </div>
 
-<form action="{{ url_for('update_kriteria') }}" method="post">
+{% if session.role == 'admin' %}
+    <!-- Tampilan untuk ADMIN: Form untuk mengedit -->
+    <form action="{{ url_for('update_kriteria') }}" method="post">
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Anda dapat mengubah bobot dan tipe kriteria di bawah ini. Pastikan total bobot dari semua kriteria adalah 1.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nama Kriteria</th>
+                        <th style="width: 25%;">Bobot (0.0 - 1.0)</th>
+                        <th style="width: 25%;">Tipe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for k in kriteria %}
+                    <tr>
+                        <td>{{ k.nama_kriteria }}</td>
+                        <td>
+                            <input type="number" name="bobot_{{ k.id_kriteria }}" value="{{ k.bobot }}" step="0.01" min="0" max="1" class="form-control" required>
+                        </td>
+                        <td>
+                            <select name="tipe_{{ k.id_kriteria }}" class="form-select" required>
+                                <option value="cost" {% if k.tipe == 'cost' %}selected{% endif %}>Cost</option>
+                                <option value="benefit" {% if k.tipe == 'benefit' %}selected{% endif %}>Benefit</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Simpan Perubahan Kriteria</button>
+    </form>
+
+{% else %}
+    <!-- Tampilan untuk USER: Tabel Read-Only -->
+    <div class="alert alert-secondary small">
+        <i class="bi bi-eye-fill me-2"></i>
+        Anda hanya dapat melihat data kriteria (mode read-only). Hubungi Admin untuk melakukan perubahan.
+    </div>
     <div class="table-responsive">
-        <table class="table table-striped">
+        <table class="table table-striped table-bordered">
             <thead>
                 <tr>
                     <th>Nama Kriteria</th>
-                    <th>Bobot (Total harus 1)</th>
+                    <th>Bobot</th>
                     <th>Tipe</th>
                 </tr>
             </thead>
@@ -20,20 +62,13 @@
                 {% for k in kriteria %}
                 <tr>
                     <td>{{ k.nama_kriteria }}</td>
-                    <td>
-                        <input type="number" name="bobot_{{ k.id_kriteria }}" value="{{ k.bobot }}" step="0.01" class="form-control">
-                    </td>
-                    <td>
-                        <select name="tipe_{{ k.id_kriteria }}" class="form-select">
-                            <option value="cost" {% if k.tipe == 'cost' %}selected{% endif %}>Cost</option>
-                            <option value="benefit" {% if k.tipe == 'benefit' %}selected{% endif %}>Benefit</option>
-                        </select>
-                    </td>
+                    <td>{{ k.bobot }}</td>
+                    <td><span class="badge bg-{{ 'danger' if k.tipe == 'cost' else 'success' }}">{{ k.tipe|capitalize }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-</form>
+{% endif %}
+
 {% endblock %}

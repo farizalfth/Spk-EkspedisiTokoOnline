@@ -2,68 +2,75 @@
 {% block title %}Hasil Perhitungan SAW{% endblock %}
 
 {% block content %}
+
+<style>
+    .table-center-all th,
+    .table-center-all td {
+        text-align: center;
+        vertical-align: middle;
+    }
+</style>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Hasil Perhitungan Metode SAW</h1>
+    <h1 class="h2">Hasil Analisis Detail (Metode SAW)</h1>
 </div>
 
 {% if error %}
 <div class="alert alert-danger">{{ error }}</div>
 {% else %}
 
-<div class="alert alert-success" role="alert">
-  <h4 class="alert-heading">Rekomendasi Terbaik!</h4>
-  <p>Berdasarkan perhitungan, alternatif terbaik adalah <strong>{{ alternatif_terbaik.nama }}</strong> dengan skor akhir <strong>{{ "{:.6f}".format(alternatif_terbaik.skor) }}</strong>.</p>
-</div>
+<!-- Rekomendasi & Grafik -->
+<div class="alert alert-success" role="alert"><h4 class="alert-heading"><i class="bi bi-trophy-fill me-2"></i>Rekomendasi Terbaik</h4><p>Berdasarkan perhitungan, alternatif terbaik adalah <strong>{{ alternatif_terbaik.nama }}</strong> dengan skor akhir <strong>{{ "{:.6f}".format(alternatif_terbaik.skor) }}</strong>.</p></div>
+<h2 class="mt-4">Grafik Perbandingan Skor Akhir</h2>
+<p>Visualisasi skor akhir untuk setiap alternatif.</p>
+<div class="card mb-5"><div class="card-body"><canvas id="hasilChart" style="min-height: 350px;"></canvas></div></div>
 
-<h3 class="mt-4">Grafik Perbandingan Skor Akhir</h3>
-<div class="card">
-    <div class="card-body">
-        <canvas id="hasilChart" style="min-height: 300px;"></canvas>
+<!-- Penjelasan Perhitungan Skor Akhir -->
+<h2 class="mt-5 pb-2 border-bottom">Penjelasan Perhitungan Skor Akhir</h2>
+<p class="text-muted">Setiap skor dihitung dengan menjumlahkan hasil perkalian antara nilai ternormalisasi (R) dengan bobot (W) dari masing-masing kriteria.</p>
+<div class="accordion" id="penjelasanAccordion">
+    {% for item in penjelasan_perhitungan %}
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading{{ item.rangking }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ item.rangking }}"><strong>Peringkat {{ item.rangking }}: {{ item.nama }}</strong> - <span class="text-primary fw-bold">Skor: {{ "%.6f"|format(item.skor) }}</span></button></h2>
+        <div id="collapse{{ item.rangking }}" class="accordion-collapse collapse" data-bs-parent="#penjelasanAccordion"><div class="accordion-body"><h6>Langkah Perhitungan untuk {{ item.nama }}:</h6><div class="bg-light p-3 rounded mt-3"><p class="mb-2">{{ item.formula_symbolic|safe }}</p><p class="font-monospace" style="font-size: 0.9rem;">{{ item.formula_numeric|safe }}</p><hr><p class="fw-bold fs-5 mb-0">V = {{ "%.6f"|format(item.skor) }}</p></div></div></div>
     </div>
+    {% endfor %}
 </div>
 
-<h3 class="mt-4">Langkah 3: Hasil Akhir dan Perangkingan (V)</h3>
-<p>Skor akhir setiap alternatif setelah dikalikan dengan bobot.</p>
-<div class="table-responsive">
-    {{ table_hasil|safe }}
+<!-- ============================================== -->
+<!--        DETAIL TABEL PERHITUNGAN (URUTAN BARU)  -->
+<!-- ============================================== -->
+<h2 class="mt-5 pb-2 border-bottom">Detail Tabel Perhitungan</h2>
+
+<!-- Langkah 1: Matriks Keputusan -->
+<h3 class="mt-4">Langkah 1: Matriks Keputusan (X)</h3>
+<p class="text-muted">Data awal yang digunakan untuk perhitungan, menggabungkan data statis dan rata-rata penilaian.</p>
+<div class="table-responsive table-center-all">
+    {{ table_awal|safe }}
 </div>
 
-<h3 class="mt-4">Langkah 2: Matriks Ternormalisasi (R)</h3>
-<p>Hasil normalisasi matriks berdasarkan tipe kriteria (cost/benefit).</p>
-<div class="table-responsive">
+<!-- Langkah 2: Matriks Ternormalisasi -->
+<h3 class="mt-5">Langkah 2: Matriks Ternormalisasi (R)</h3>
+<p class="text-muted">Hasil normalisasi matriks berdasarkan tipe kriteria (cost/benefit).</p>
+<div class="table-responsive table-center-all">
     {{ table_normalisasi|safe }}
 </div>
 
-<h3 class="mt-4">Langkah 1: Matriks Keputusan (X)</h3>
-<p>Data awal yang digunakan untuk perhitungan.</p>
-<div class="table-responsive">
-    {{ table_awal|safe }}
+<!-- Langkah 3: Hasil Akhir -->
+<h3 class="mt-5">Langkah 3: Hasil Akhir dan Perangkingan (V)</h3>
+<p class="text-muted">Skor akhir setiap alternatif setelah matriks ternormalisasi dikalikan dengan bobot kriteria.</p>
+<div class="table-responsive table-center-all">
+    {{ table_hasil|safe }}
 </div>
 
 {% endif %}
 
+<!-- SCRIPT UNTUK LINE CHART (Tidak Berubah) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    {% if not error %}
     const ctx = document.getElementById('hasilChart');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: {{ chart_labels|tojson }},
-            datasets: [{
-                label: 'Skor Akhir',
-                data: {{ chart_scores|tojson }},
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            scales: { x: { beginAtZero: true } },
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
-    });
+    new Chart(ctx, { type: 'line', data: { labels: {{ chart_labels|tojson }}, datasets: [{ label: 'Skor Akhir', data: {{ chart_scores|tojson }}, fill: true, backgroundColor: 'rgba(0, 128, 128, 0.1)', borderColor: 'rgba(0, 128, 128, 1)', tension: 0.1, pointBackgroundColor: 'rgba(0, 128, 128, 1)', pointRadius: 5, pointHoverRadius: 7 }] }, options: { scales: { y: { beginAtZero: false, ticks: { callback: function(value, index, values) { return value.toFixed(2); } } } }, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    {% endif %}
 </script>
 {% endblock %}
